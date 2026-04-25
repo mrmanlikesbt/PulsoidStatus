@@ -9,8 +9,6 @@
 const FETCH_INTERVAL_MS = 30_000;
 /// URL to the local Python server
 const LOCALHOST_URL = "http://localhost:8765/bpm";
-/// How many times our BPM has to be the same before showing NOT_AVAILABLE_TEXT
-const MAX_SAME_BPM_COUNT = 2;
 /// The status displayed when BPM is unavailable, for whatever reason
 const NOT_AVAILABLE_TEXT = "n/a";
 
@@ -57,7 +55,7 @@ class PulsoidStatus {
 	async loop() {
 		let bpm
 		try {
-			const response = await fetch("http://localhost:8765/bpm");
+			const response = await fetch(LOCALHOST_URL);
 			if (!response.ok) {
 				return;
 			}
@@ -67,23 +65,6 @@ class PulsoidStatus {
 			//console.error("[PulsoidStatus] Error fetching BPM:", e);
 		}
 
-		this.handleBpm(bpm);
-	}
-
-	handleBpm(bpm) {
-		if (bpm === this.last_bpm) {
-			this.same_bpm_count++;
-
-			if (this.same_bpm_count >= MAX_SAME_BPM_COUNT) {
-				this.setStatus(NOT_AVAILABLE_TEXT);
-				return;
-			}
-		}
-		else {
-			this.same_bpm_count = 0;
-		}
-		this.last_bpm = bpm
-		
 		if(bpm == null || bpm == undefined) {
 			this.setStatus(NOT_AVAILABLE_TEXT);
 		}

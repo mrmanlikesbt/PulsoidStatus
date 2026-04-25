@@ -10,11 +10,13 @@ PULSOID_API_TOKEN = os.getenv("PULSOID_API_TOKEN")
 PULSOID_URL = "https://dev.pulsoid.net/api/v1/data/heart_rate/latest"
 
 # the seconds in-between fetching the latest BPM from Pulsoid
-UPDATE_INTERVAL = 30
+UPDATE_INTERVAL = 10
 # localhost port for BetterDiscord to fetch
 PORT = 8765
+# how many times our BPM has to be the same before just sending null
+MAX_SAME_BPM_COUNT = 3
 
-last_bpm = None
+display_bpm = None
 
 def get_current_time():
     return datetime.now().strftime("%H:%M:%S")
@@ -36,13 +38,33 @@ def get_bpm():
     return None
 
 def bpm_loop():
-    global last_bpm
+    # the last BPM recieved from get_bpm()
+    last_bpm = None
+    # the amount of times get_bpm() has returned the same value
+    same_bpm_count = 0
+    # Only send one "[TIME] BPM updated: None" message
+    pause_bpm_log = False
+    
+    global display_bpm
 
     while True:
         bpm = get_bpm()
-        if bpm != last_bpm and bpm != None:
-            last_bpm = bpm
-            print(f"[{get_current_time()}] BPM updated: {bpm}")
+        if bpm == last_bpm:
+            same_bpm_count += 1
+
+            if same_bpm_count >= MAX_SAME_BPM_COUNT:
+                display_bpm = None
+        else:
+            same_bpm_count = 0
+            display_bpm = bpm
+            pause_bpm_log = False
+        
+        last_bpm = bpm
+        
+        if not pause_bpm_log:
+            print(f"[{get_current_time()}] BPM updated: {display_bpm}")
+            if display_bpm == None:
+                pause_bpm_log = True
 
         time.sleep(UPDATE_INTERVAL)
 
@@ -53,7 +75,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
-            self.wfile.write(json.dumps({"bpm": last_bpm}).encode())
+            self.wfile.write(json.dumps({"bpm": display_bpm}).encode())
         else:
             self.send_response(404)
             self.end_headers()
