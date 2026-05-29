@@ -12,7 +12,7 @@ const LOCALHOST_URL = "http://localhost:8765/bpm";
 /// The status displayed when BPM is unavailable, for whatever reason
 const NOT_AVAILABLE_TEXT = "n/a";
 
-class PulsoidStatus {
+module.exports = class PulsoidStatus {
 	constructor() {
 		// Reference to the BPM loop interval
 		this.interval = null;
@@ -33,7 +33,7 @@ class PulsoidStatus {
 			return m;
 		})();
 
-		this.authToken = this.modules.find(m => m.exports?.default?.getToken?.name === "getToken").exports.default.getToken() || (() => {
+		this.authToken = this.modules.find(m => m.exports?.default?.getToken?.name === "getToken").exports?.default.getToken() || (() => {
 			let proxy = document.createElement("iframe")
 			document.body.appendChild(proxy)
 			let token = Object.assign({}, proxy.contentWindow).window.localStorage["token"]
@@ -116,4 +116,4 @@ class PulsoidStatus {
 
 		return json;
 	}
-}
+};
