@@ -18,10 +18,6 @@ module.exports = class PulsoidStatus {
 		this.interval = null;
 		// The last status we set, used to avoid unnecessary status updates if nothing has changed
 		this.last_set_status = null;
-		// Our last BPM. Compared with [same_bpm_count] to determine if we should show the BPM or NOT_AVAILABLE_TEXT
-		this.last_bpm = 0;
-		// See above
-		this.same_bpm_count = 0; 
 	}
 
 	load() {
