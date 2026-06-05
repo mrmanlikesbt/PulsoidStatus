@@ -10,18 +10,21 @@ PULSOID_API_TOKEN = os.getenv("PULSOID_API_TOKEN")
 PULSOID_URL = "https://dev.pulsoid.net/api/v1/data/heart_rate/latest"
 
 # the seconds in-between fetching the latest BPM from Pulsoid
-UPDATE_INTERVAL = 10
+UPDATE_INTERVAL = 25
 # localhost port for BetterDiscord to fetch
 PORT = 8765
-# how many times our BPM has to be the same before just sending null
-MAX_SAME_BPM_COUNT = 3
+# if our BPM hasn't updated in this many seconds, set display_bpm to None
+BPM_STALE_TIME = 30
 
-display_bpm = None
+display_bpm = 0
 
 def get_current_time():
     return datetime.now().strftime("%H:%M:%S")
 
-def get_bpm():
+def get_unix_ms():
+    return int(time.time()) * 1000
+
+def get_bpm_data():
     try:
         req = urllib.request.Request(
             PULSOID_URL,
@@ -31,40 +34,29 @@ def get_bpm():
             }
         )
         with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.loads(resp.read().decode())
-            return data.get("data", {}).get("heart_rate")
+            return json.loads(resp.read().decode())
     except Exception as error:
         print(f"[{get_current_time()}] Error fetching BPM:", error)
     return None
 
 def bpm_loop():
-    # the last BPM recieved from get_bpm()
-    last_bpm = None
-    # the amount of times get_bpm() has returned the same value
-    same_bpm_count = 0
-    # Only send one "[TIME] BPM updated: None" message
-    pause_bpm_log = False
+    # So we don't send duplicate messages. i.e: "[TIME] BPM updated: None" x100
+    last_printed_bpm = None
     
     global display_bpm
 
     while True:
-        bpm = get_bpm()
-        if bpm == last_bpm:
-            same_bpm_count += 1
+        bpm_data = get_bpm_data()
 
-            if same_bpm_count >= MAX_SAME_BPM_COUNT:
-                display_bpm = None
+        time_since_last_measured = (get_unix_ms() - bpm_data.get("measured_at")) / 1000
+        if time_since_last_measured >= BPM_STALE_TIME:
+            display_bpm = None
         else:
-            same_bpm_count = 0
-            display_bpm = bpm
-            pause_bpm_log = False
+            display_bpm = bpm_data.get("data", {}).get("heart_rate")
         
-        last_bpm = bpm
-        
-        if not pause_bpm_log:
+        if last_printed_bpm != display_bpm:
+            last_printed_bpm = display_bpm
             print(f"[{get_current_time()}] BPM updated: {display_bpm}")
-            if display_bpm == None:
-                pause_bpm_log = True
 
         time.sleep(UPDATE_INTERVAL)
 
