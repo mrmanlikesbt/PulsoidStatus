@@ -90,7 +90,7 @@ class Handler(BaseHTTPRequestHandler):
 			self.send_header("Access-Control-Allow-Origin", "*")
 			self.end_headers()
 			payload = {
-				"info": f"{display_bpm} Zone {display_zone}",
+				"info": f"{display_bpm} | Zone {display_zone}",
 			}
 			self.wfile.write(json.dumps(payload).encode())
 		else:
