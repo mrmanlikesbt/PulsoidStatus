@@ -47,16 +47,16 @@ def bpm_loop():
 
     while True:
         bpm_data = get_bpm_data()
-
-        time_since_last_measured = (get_unix_ms() - bpm_data.get("measured_at")) / 1000
-        if time_since_last_measured >= BPM_STALE_TIME:
-            display_bpm = None
-        else:
-            display_bpm = bpm_data.get("data", {}).get("heart_rate")
-        
-        if last_printed_bpm != display_bpm:
-            last_printed_bpm = display_bpm
-            print(f"[{get_current_time()}] BPM updated: {display_bpm}")
+        if bpm_data:
+            time_since_last_measured = (get_unix_ms() - bpm_data.get("measured_at")) / 1000
+            if time_since_last_measured >= BPM_STALE_TIME:
+                display_bpm = None
+            else:
+                display_bpm = bpm_data.get("data", {}).get("heart_rate")
+            
+            if last_printed_bpm != display_bpm:
+                last_printed_bpm = display_bpm
+                print(f"[{get_current_time()}] BPM updated: {display_bpm}")
 
         time.sleep(UPDATE_INTERVAL)
 
