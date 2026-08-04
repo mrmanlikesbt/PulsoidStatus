@@ -49,23 +49,23 @@ module.exports = class PulsoidStatus {
 	}
 
 	async loop() {
-		let bpm
+		let info
 		try {
 			const response = await fetch(LOCALHOST_URL);
 			if (!response.ok) {
 				return;
 			}
 			const data = await response.json();
-			bpm = data.bpm;
+			info = data.info;
 		} catch (e) {
 			//console.error("[PulsoidStatus] Error fetching BPM:", e);
 		}
 
-		if(bpm == null || bpm == undefined) {
+		if(info == null || info == undefined) {
 			this.setStatus(NOT_AVAILABLE_TEXT);
 		}
 		else {
-			this.setStatus(bpm);
+			this.setStatus(info);
 		}
 	}
 
